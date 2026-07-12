@@ -121,10 +121,11 @@
 
   /* ---- High Score Board (아케이드 하이스코어) ---- */
   .hs-board{background:var(--surface);border:2px solid var(--line);padding:4px 10px 10px;margin-top:20px}
-  .hs-head{display:grid;grid-template-columns:auto 1fr auto;column-gap:8px;padding:12px 24px 10px;font-family:var(--font-pixel);font-size:.5rem;color:var(--b);text-shadow:0 0 6px rgba(0,255,255,.4);border-bottom:2px solid var(--line)}
+  .hs-head{display:grid;grid-template-columns:1fr auto 1fr;column-gap:8px;padding:12px 24px 10px;font-family:var(--font-pixel);font-size:.5rem;color:var(--b);text-shadow:0 0 6px rgba(0,255,255,.4);border-bottom:2px solid var(--line)}
+  .hs-head span:first-child{text-align:left}
   .hs-head span:nth-child(2){text-align:center}
   .hs-head span:last-child{text-align:right}
-  .hs-row{display:grid;grid-template-columns:auto 1fr auto;column-gap:8px;align-items:center;padding:11px 24px}
+  .hs-row{display:grid;grid-template-columns:1fr auto 1fr;column-gap:8px;align-items:center;padding:11px 24px}
   .hs-rows .hs-row:nth-child(even){background:#12121c}
   .hs-rank{font-family:var(--font-pixel);font-size:.56rem}
   .hs-name{font-size:.9rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;text-align:center}
