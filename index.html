@@ -121,15 +121,14 @@
 
   /* ---- High Score Board (아케이드 하이스코어) ---- */
   .hs-board{background:var(--surface);border:2px solid var(--line);padding:4px 10px 10px;margin-top:20px}
-  .hs-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 24px 10px;font-family:var(--font-pixel);font-size:.5rem;color:var(--b);text-shadow:0 0 6px rgba(0,255,255,.4);border-bottom:2px solid var(--line)}
-  .hs-head span:last-child{margin-right:-2px}
-  .hs-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 24px}
+  .hs-head{display:grid;grid-template-columns:1fr 1fr 1fr;column-gap:8px;padding:12px 16px 10px;font-family:var(--font-pixel);font-size:.5rem;color:var(--b);text-shadow:0 0 6px rgba(0,255,255,.4);border-bottom:2px solid var(--line);text-align:center}
+  .hs-row{display:grid;grid-template-columns:1fr 1fr 1fr;column-gap:8px;align-items:center;padding:11px 16px}
   .hs-rows .hs-row:nth-child(even){background:#12121c}
-  .hs-rank{font-family:var(--font-pixel);font-size:.56rem;flex:0 0 auto}
-  .hs-name{font-size:.9rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:0 1 auto;text-align:center}
-  .hs-rec{font-size:.9rem;font-weight:700;white-space:nowrap;text-align:right;flex:0 0 auto}
+  .hs-rank{font-family:var(--font-pixel);font-size:.56rem;text-align:center}
+  .hs-name{font-size:.9rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;text-align:center}
+  .hs-rec{font-size:.9rem;font-weight:700;white-space:nowrap;text-align:center}
   .hs-rate{font-size:.85em;opacity:.6;margin-left:3px}
-  .hs-rows .hs-row.hs-top{background:#14141f;background:color-mix(in srgb,currentColor 13%,#0b0b10);border:3px solid currentColor;padding:8px 21px;animation:hsblink 1s step-end infinite}
+  .hs-rows .hs-row.hs-top{background:#14141f;background:color-mix(in srgb,currentColor 13%,#0b0b10);border:3px solid currentColor;padding:8px 13px;animation:hsblink 1s step-end infinite}
   @keyframes hsblink{0%,50%{opacity:1}51%,100%{opacity:.25}}
   @media (max-width:360px){.hs-rate{font-size:.68em}}
   @media (prefers-reduced-motion:reduce){.hs-rows .hs-row.hs-top,.tr-gold .spk{animation:none}}
