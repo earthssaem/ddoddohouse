@@ -122,18 +122,16 @@
 
   /* ---- High Score Board (아케이드 하이스코어) ---- */
   .hs-board{background:var(--surface);border:2px solid var(--line);padding:4px 10px 10px;margin-top:20px}
-  .hs-head{display:grid;grid-template-columns:54px 1fr auto;gap:8px;padding:12px 6px 10px;font-family:var(--font-pixel);font-size:.5rem;color:var(--b);text-shadow:0 0 6px rgba(0,255,255,.4);border-bottom:2px solid var(--line)}
-  .hs-head span:last-child{text-align:right}
-  .hs-row{display:grid;grid-template-columns:54px fit-content(45%) minmax(12px,1fr) auto;gap:8px;align-items:center;padding:11px 6px}
+  .hs-head{display:grid;grid-template-columns:54px 104px auto;gap:10px;padding:12px 6px 10px;font-family:var(--font-pixel);font-size:.5rem;color:var(--b);text-shadow:0 0 6px rgba(0,255,255,.4);border-bottom:2px solid var(--line)}
+  .hs-row{display:grid;grid-template-columns:54px 104px auto;gap:10px;align-items:center;padding:11px 6px}
   .hs-rows .hs-row:nth-child(even){background:#12121c}
   .hs-rank{font-family:var(--font-pixel);font-size:.56rem}
   .hs-name{font-size:.9rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-  .hs-dots{height:0;border-bottom:2px dotted currentColor;opacity:.25;transform:translateY(2px)}
-  .hs-rec{font-size:.9rem;font-weight:700;white-space:nowrap;text-align:right}
+  .hs-rec{font-size:.9rem;font-weight:700;white-space:nowrap}
   .hs-rate{font-size:.85em;opacity:.6;margin-left:3px}
   .hs-rows .hs-row.hs-top{background:#0d2b12;border:3px solid currentColor;padding:8px 3px;animation:hsblink 1s step-end infinite}
   @keyframes hsblink{0%,50%{opacity:1}51%,100%{opacity:.25}}
-  @media (max-width:360px){.hs-rate{font-size:.68em}}
+  @media (max-width:360px){.hs-rate{font-size:.68em}.hs-head,.hs-row{grid-template-columns:50px 88px auto;gap:8px}}
   @media (prefers-reduced-motion:reduce){.hs-rows .hs-row.hs-top,.tr-gold .spk{animation:none}}
 
   .panel{background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:6px 14px}
@@ -654,7 +652,6 @@ function renderOverall(){
       <div class="hs-row ${i===0?'hs-top':''}" style="color:${p.color}">
         <span class="hs-rank">${rankLbl(i+1)}</span>
         <span class="hs-name">${esc(p.name)}</span>
-        <span class="hs-dots"></span>
         <span class="hs-rec">${p.wins}승${p.losses}패<span class="hs-rate">(${p.rate}%)</span></span>
       </div>`).join('')}</div>
   </div>`;
