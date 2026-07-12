@@ -2,14 +2,25 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0d0d12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="또또하우스">
 <title>DDODDOHOUSE — ARCADE</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" type="image/png" href="/icon-192.png">
 <style>
-  /* 한글 픽셀 폰트: 둥근모 (DungGeunMo) */
+  /* 폰트 자체 호스팅 — CDN 장애·오프라인에도 픽셀 룩 유지 */
+  @font-face{
+    font-family:'Press Start 2P';
+    src:url('/fonts/press-start-2p.woff2') format('woff2');
+    font-weight:normal;font-style:normal;font-display:swap;
+  }
   @font-face{
     font-family:'DungGeunMo';
-    src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff');
+    src:url('/fonts/dunggeunmo.woff2') format('woff2');
     font-weight:normal;font-style:normal;font-display:swap;
   }
   :root{
@@ -31,6 +42,7 @@
     --font-pixel-bold:'Press Start 2P','DungGeunMo',cursive;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--b);outline-offset:2px}
   html,body{height:100%}
   body{
     background:var(--bg);color:var(--text);
@@ -339,7 +351,7 @@
 </head>
 <body>
 <div id="app">
-  <button class="gear" id="gear">⚙️</button>
+  <button class="gear" id="gear" aria-label="설정">⚙️</button>
   <header>
     <div class="logo">
       <span class="ico">🎲</span>
@@ -370,7 +382,7 @@
       <div class="search-wrap">
         <span class="si">🔍</span>
         <input id="gameSearch" type="text" placeholder="이름·초성 검색 (예: ㅋㅌ)" oninput="onSearch(this.value)">
-        <button class="clr" id="clrBtn" onclick="clearSearch()">✕</button>
+        <button class="clr" id="clrBtn" onclick="clearSearch()" aria-label="검색 지우기">✕</button>
       </div>
       <div class="cats" id="cats"></div>
       <div class="game-grid" id="gameList"></div>
@@ -401,7 +413,7 @@
 </div>
 
 <div class="scrim" id="scrim"><div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div></div>
-<div class="sd-scrim" id="sdScrim"><div class="sd-card"><button class="sd-close" onclick="closeSessionDetail()">✕</button><div id="sdBody"></div></div></div>
+<div class="sd-scrim" id="sdScrim"><div class="sd-card"><button class="sd-close" onclick="closeSessionDetail()" aria-label="닫기">✕</button><div id="sdBody"></div></div></div>
 <div class="pc-scrim" id="pcScrim"><div class="pc-wrap"><button class="pc-back" onclick="closePlayerCard()">‹ 뒤로</button><div class="pc-card" id="pcCard"><div id="pcBody"></div></div></div></div>
 <div class="toast" id="toast"></div>
 
@@ -423,7 +435,6 @@ function initKey(){
 }
 function appKey(){return localStorage.getItem(KEY_LS)||''}
 
-let syncOn=true;
 function setSync(state,txt){const el=$('#sync');if(!el)return;el.className='sync '+state;const t=$('#syncTxt');if(t)t.textContent=txt}
 
 // Vercel 서버리스 API (/api/data) 호출 헬퍼
@@ -533,7 +544,6 @@ function gameOf(id){return DB.games.find(x=>x.id===id)}
 function dayKey(ts){const d=new Date(ts);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
 function dayLabel(ts){const d=new Date(ts);const wd=['일','월','화','수','목','금','토'][d.getDay()];return (d.getMonth()+1)+'월 '+d.getDate()+'일 ('+wd+')'}
 function timeAgo(ts){const d=(Date.now()-ts)/86400000;if(d<1)return '오늘';if(d<2)return '어제';if(d<7)return Math.floor(d)+'일 전';const dt=new Date(ts);return (dt.getMonth()+1)+'월 '+dt.getDate()+'일'}
-function thisMonth(ts){const d=new Date(ts),n=new Date();return d.getFullYear()===n.getFullYear()&&d.getMonth()===n.getMonth()}
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1900)}
 
 // 같은 날 같은 게임이 여러 판이면 회차 번호(①②③) 부여. 1판뿐이면 빈 문자열.
@@ -627,7 +637,6 @@ function resultInLog(log,pid){
   }
   return {type:'wl',win:log.winners.includes(pid)};
 }
-function ordinal(n){return n+'등'}
 
 // 개인 전적 카드 (9:16, 인스타 스토리 캡쳐용)
 window.openPlayerCard=(key,pid)=>{
@@ -749,7 +758,7 @@ window.saveKey=()=>{
   if(v)localStorage.setItem(KEY_LS,v);else localStorage.removeItem(KEY_LS);
   closeSheet();toast(v?'코드를 저장했어요 🔑':'코드를 지웠어요');
 };
-window.reloadFromSheet=async()=>{closeSheet();await load();FRIENDS.forEach(n=>ensurePlayer(n));render();toast('서버에서 불러왔어요 🔄');};
+window.reloadFromSheet=async()=>{closeSheet();await load();normalizeDB();render();toast('서버에서 불러왔어요 🔄');};
 window.resetAll=async()=>{
   if(!confirm('정말 모든 게임·기록을 지울까요? (연경·영식은 남아요)'))return;
   DB={games:[],players:[],logs:[],rev:DB.rev||0};FRIENDS.forEach(n=>ensurePlayer(n));
@@ -890,13 +899,20 @@ window.addLog=async()=>{
   }
 };
 
-(async()=>{
-  initKey();
-  await load();
-  // 기본 멤버·색상은 메모리에서만 보정 — 실제 기록을 남길 때 함께 저장됨.
-  // (앱을 열기만 해도 서버를 덮어쓰던 문제 방지: 시작 시에는 절대 저장하지 않음)
+// 기본 멤버 보장 + 색상 없는 플레이어에게 순서대로 배정.
+// 배열 순서 기준이라 어느 기기에서 계산해도 같은 색이 나오고,
+// 다음 실제 저장 때 함께 서버에 기록되어 확정된다.
+function normalizeDB(){
   FRIENDS.forEach(n=>ensurePlayer(n));
   DB.players.forEach(p=>{if(!p.color)p.color=pickColor()});
+}
+
+(async()=>{
+  initKey();
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  await load();
+  // 메모리에서만 보정 — 앱을 열기만 할 때는 절대 저장하지 않음
+  normalizeDB();
   render();
 })();
 </script>
