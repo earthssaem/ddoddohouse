@@ -611,24 +611,24 @@ const TROPHY_PAL={
   silver:{d:'#55556a',m:'#c9c9dc',l:'#f4f4ff'},
   bronze:{d:'#6e3d14',m:'#cd7f32',l:'#f0b078'}
 };
-// 픽셀 왕관 (TODAY'S MVP 카드): 항상 금색, 밴드에 보석 2개(P=핑크, B=하늘)
+// 픽셀 왕관 (TODAY'S MVP 카드): 항상 금색, 밴드에 보석 2개(P=핑크, B=하늘), 꼭지점 하이라이트
 const CROWN_MAP=[
-'.D....D....D.',
-'DMD..DMD..DMD',
-'DMMD.DMD.DMMD',
-'DMMMDMMMDMMMD',
-'DLMMMMLMMMMLD',
-'DMMPMMMMMBMMD',
-'DDDDDDDDDDDDD'];
+'.L...L...L.',
+'.MM.MMM.MM.',
+'DMMDMMMDMMD',
+'DMMMMMMMMMD',
+'DLMMPMBMMLD',
+'DMMMMMMMMMD',
+'DDDDDDDDDDD'];
 const CROWN_PAL={d:'#8a6a00',m:'#ffd93b',l:'#fff3a6',P:'#ff2d78',B:'#00e5ff'};
 function crownSVG(px){
-  let r='';
+  const w=CROWN_MAP[0].length,rows=CROWN_MAP.length;let r='';
   CROWN_MAP.forEach((row,y)=>{[...row].forEach((ch,x)=>{
     const c=ch==='D'?CROWN_PAL.d:ch==='M'?CROWN_PAL.m:ch==='L'?CROWN_PAL.l:ch==='P'?CROWN_PAL.P:ch==='B'?CROWN_PAL.B:null;
     if(c)r+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`;
   });});
-  const h=Math.round(px/13*7);
-  return `<svg viewBox="0 0 13 7" width="${px}" height="${h}" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
+  const h=Math.round(px/w*rows);
+  return `<svg viewBox="0 0 ${w} ${rows}" width="${px}" height="${h}" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;
 }
 
 function trophySVG(kind,px){
@@ -688,7 +688,7 @@ function renderSession(){
     const cc=(champ&&champ.color)||'var(--y)';
     const gh=day.logs.slice().sort((a,b)=>a.date-b.date).map(l=>{const g=gameOf(l.gameId);const rm=roundMark(day.logs,l);const hasWin=l.winners.length>0;return `<div class="s-game"><span class="sg-ico">${g?esc(g.icon):'🎲'}</span><span class="sg-nm">${g?esc(g.name):'게임'}${rm?' '+rm:''}</span><span class="sg-win" style="${hasWin?'':'color:var(--muted-2)'}">${hasWin?'👑 '+l.winners.map(id=>esc(pname(id))).join(', '):'💀 실패'}</span></div>`}).join('');
     return `<div class="session"><div class="s-head"><span class="s-date">${dayLabel(day.date)}</span><span class="s-line"></span><span class="s-meta">${day.logs.length} PLAYS</span></div>
-      <div class="s-winner" onclick="openSessionDetail('${dayKey(day.date)}')" style="cursor:pointer;border-color:${cc};background:color-mix(in srgb,${cc} 8%,transparent)"><div class="s-crown">${crownSVG(52)}</div><div class="wt"><div class="wlbl" style="color:${cc}">TODAY'S MVP</div><div class="wnm">${esc(champName)}</div><div class="wsub">${mx>0?mx+'승':'승자 없음'} · 탭하면 상세</div></div><div class="s-arrow" style="color:${cc}">▶</div></div>
+      <div class="s-winner" onclick="openSessionDetail('${dayKey(day.date)}')" style="cursor:pointer;border-color:${cc};background:color-mix(in srgb,${cc} 8%,transparent)"><div class="s-crown">${crownSVG(34)}</div><div class="wt"><div class="wlbl" style="color:${cc}">TODAY'S MVP</div><div class="wnm">${esc(champName)}</div><div class="wsub">${mx>0?mx+'승':'승자 없음'} · 탭하면 상세</div></div><div class="s-arrow" style="color:${cc}">▶</div></div>
       <div class="s-games">${gh}</div></div>`;
   }).join('');
 }
