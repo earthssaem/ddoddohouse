@@ -412,8 +412,16 @@ const FRIENDS=['연경','영식'];
 const CATEGORIES=['카드','주사위','전략','파티','협력','추리','기타'];
 const CIRCLED=['①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩','⑪','⑫','⑬','⑭','⑮'];
 
-let DB={games:[],players:[],logs:[]};
+let DB={games:[],players:[],logs:[],rev:0};
 let searchQuery='';let activeCat='전체';
+
+// 비밀 코드: URL(?key=... 또는 #key=...)로 받으면 저장 후 주소에서 지움
+const KEY_LS='ddoddohouse_key';
+function initKey(){
+  const m=(location.search+location.hash).match(/[?#&]key=([^&#]+)/);
+  if(m){localStorage.setItem(KEY_LS,decodeURIComponent(m[1]));history.replaceState(null,'',location.pathname);}
+}
+function appKey(){return localStorage.getItem(KEY_LS)||''}
 
 let syncOn=true;
 function setSync(state,txt){const el=$('#sync');if(!el)return;el.className='sync '+state;const t=$('#syncTxt');if(t)t.textContent=txt}
@@ -422,11 +430,29 @@ function setSync(state,txt){const el=$('#sync');if(!el)return;el.className='sync
 async function apiGet(){
   const r=await fetch('/api/data');
   if(!r.ok)throw new Error('load fail: '+r.status);
-  return r.json();
+  const d=await r.json();
+  if(d&&d.rev==null)d.rev=0;
+  return d;
 }
+// 저장: rev(버전 번호)를 함께 보내고, 서버가 더 최신이면 409로 거절당함
 async function apiSave(db){
-  const r=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(db)});
+  const r=await fetch('/api/data',{method:'POST',headers:{'Content-Type':'application/json','x-app-key':appKey()},body:JSON.stringify(db)});
+  if(r.status===409){const j=await r.json();return{conflict:true,server:j.data}}
+  if(r.status===401)throw new Error('unauthorized');
   if(!r.ok)throw new Error('save fail: '+r.status);
+  const j=await r.json();
+  return{conflict:false,rev:j.rev};
+}
+
+// 두 DB 병합: id 기준 합집합, 같은 id는 내 쪽(local)이 우선
+function mergeDB(server,local){
+  const merge=(a,b)=>{const m={};(a||[]).forEach(x=>m[x.id]=x);(b||[]).forEach(x=>m[x.id]=x);return Object.values(m)};
+  return{
+    rev:Math.max(server.rev||0,local.rev||0),
+    games:merge(server.games,local.games),
+    players:merge(server.players,local.players),
+    logs:merge(server.logs,local.logs)
+  };
 }
 
 async function load(){
@@ -434,11 +460,11 @@ async function load(){
   try{
     const data=await apiGet();
     if(data)DB=data;
-    if(!DB.games)DB={games:[],players:[],logs:[]};
+    if(!DB.games)DB={games:[],players:[],logs:[],rev:0};
     setSync('ok','ONLINE');
   }catch(e){
     try{const r=localStorage.getItem('ddoddohouse_db');if(r)DB=JSON.parse(r);}catch(_){}
-    if(!DB.games)DB={games:[],players:[],logs:[]};
+    if(!DB.games)DB={games:[],players:[],logs:[],rev:0};
     setSync('err','OFFLINE');
   }
 }
@@ -447,10 +473,20 @@ async function save(){
   try{localStorage.setItem('ddoddohouse_db',JSON.stringify(DB));}catch(e){}
   setSync('saving','SAVE…');
   try{
-    await apiSave(DB);
+    let res=await apiSave(DB);
+    if(res.conflict){
+      // 내 데이터가 낡음(다른 사람이 먼저 저장) → 서버 데이터와 병합 후 한 번 더 저장
+      DB=mergeDB(res.server,DB);
+      res=await apiSave(DB);
+      if(res.conflict)throw new Error('conflict');
+      render();
+    }
+    DB.rev=res.rev;
+    try{localStorage.setItem('ddoddohouse_db',JSON.stringify(DB));}catch(e){}
     setSync('ok','ONLINE');
   }catch(e){
-    setSync('err','SAVE FAIL');
+    if(e.message==='unauthorized'){setSync('err','NO KEY');toast('비밀 코드가 필요해요 — ⚙️에서 입력');}
+    else setSync('err','SAVE FAIL');
   }
 }
 
@@ -656,7 +692,12 @@ function renderStats(){
   $('#topGames').innerHTML=arr.length?arr.map(x=>`<div class="bar-stat"><div class="lbl"><b>${x.g.icon} ${x.g.name}</b><span>${x.c}</span></div><div class="track"><div class="fill" style="width:${x.c/max*100}%"></div></div></div>`).join(''):'<div class="empty" style="padding:20px"><p>플레이 기록이 쌓이면<br>여기에 표시돼요.</p></div>';
 }
 
-window.delLog=async id=>{DB.logs=DB.logs.filter(l=>l.id!==id);await save();render();toast('기록을 삭제했어요')}
+window.delLog=async id=>{
+  const l=DB.logs.find(x=>x.id===id);if(!l)return;
+  const g=gameOf(l.gameId);
+  if(!confirm(`'${g?g.name:'게임'}' ${timeAgo(l.date)} 기록을 삭제할까요?`))return;
+  DB.logs=DB.logs.filter(x=>x.id!==id);await save();render();toast('기록을 삭제했어요');
+}
 
 window.delGame=async(id,ev)=>{
   if(ev)ev.stopPropagation();
@@ -680,15 +721,23 @@ $('#navNew').onclick=()=>openSheet(sheetChooser());
 $('#gear').onclick=()=>openSheet(settingsHTML());
 
 function settingsHTML(){
+  const k=appKey();
   return `<h2>DDODDOHOUSE</h2>
   <div class="hint" style="margin:-12px 0 16px">이 앱은 <b>서버(Upstash Redis)</b>에 기록을 저장해요. 별도 연결 없이 자동 동기화됩니다. 친구들과 같은 주소를 쓰면 기록이 함께 쌓여요. ✨</div>
+  <label class="fld"><span class="t">비밀 코드 — 기록 저장에 필요해요 (주소 뒤에 ?key=코드 를 붙여 공유하면 자동 입력)</span><input id="setKey" type="text" value="${k.replace(/"/g,'&quot;')}" placeholder="설정 안 했으면 비워두세요"></label>
+  <button class="btn-ghost" onclick="saveKey()">코드 저장</button>
   <button class="action-btn" onclick="reloadFromSheet()">RELOAD</button>
   <button class="btn-ghost" onclick="resetAll()">기록 전체 초기화</button>`;
 }
+window.saveKey=()=>{
+  const v=$('#setKey').value.trim();
+  if(v)localStorage.setItem(KEY_LS,v);else localStorage.removeItem(KEY_LS);
+  closeSheet();toast(v?'코드를 저장했어요 🔑':'코드를 지웠어요');
+};
 window.reloadFromSheet=async()=>{closeSheet();await load();FRIENDS.forEach(n=>ensurePlayer(n));render();toast('서버에서 불러왔어요 🔄');};
 window.resetAll=async()=>{
   if(!confirm('정말 모든 게임·기록을 지울까요? (연경·영식은 남아요)'))return;
-  DB={games:[],players:[],logs:[]};FRIENDS.forEach(n=>ensurePlayer(n));
+  DB={games:[],players:[],logs:[],rev:DB.rev||0};FRIENDS.forEach(n=>ensurePlayer(n));
   await save();closeSheet();render();toast('초기화했어요');
 };
 
@@ -827,10 +876,12 @@ window.addLog=async()=>{
 };
 
 (async()=>{
+  initKey();
   await load();
+  // 기본 멤버·색상은 메모리에서만 보정 — 실제 기록을 남길 때 함께 저장됨.
+  // (앱을 열기만 해도 서버를 덮어쓰던 문제 방지: 시작 시에는 절대 저장하지 않음)
   FRIENDS.forEach(n=>ensurePlayer(n));
   DB.players.forEach(p=>{if(!p.color)p.color=pickColor()});
-  await save();
   render();
 })();
 </script>

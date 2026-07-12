@@ -7,7 +7,8 @@ const redis = new Redis({
 });
 
 const KEY = 'ddoddohouse:db';
-const EMPTY = { games: [], players: [], logs: [] };
+const EMPTY = { games: [], players: [], logs: [], rev: 0 };
+const MAX_BYTES = 1_000_000; // 저장 데이터 최대 1MB
 
 export default async function handler(req, res) {
   try {
@@ -17,6 +18,12 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
+      // APP_SECRET 환경변수를 설정해두면, 같은 코드를 보낸 요청만 저장 허용
+      const secret = process.env.APP_SECRET;
+      if (secret && req.headers['x-app-key'] !== secret) {
+        return res.status(401).json({ error: 'unauthorized' });
+      }
+
       const body = req.body;
       if (
         !body ||
@@ -26,8 +33,24 @@ export default async function handler(req, res) {
       ) {
         return res.status(400).json({ error: 'invalid payload' });
       }
-      await redis.set(KEY, { games: body.games, players: body.players, logs: body.logs });
-      return res.status(200).json({ ok: true });
+
+      const next = { games: body.games, players: body.players, logs: body.logs };
+      if (JSON.stringify(next).length > MAX_BYTES) {
+        return res.status(413).json({ error: 'payload too large' });
+      }
+
+      // 낙관적 잠금: 클라이언트가 알고 있던 rev가 서버보다 낡았으면 거절하고
+      // 서버 데이터를 돌려줌 → 클라이언트가 병합 후 재시도
+      const cur = await redis.get(KEY);
+      const curRev = (cur && cur.rev) || 0;
+      const baseRev = Number(body.rev) || 0;
+      if (cur && baseRev < curRev) {
+        return res.status(409).json({ error: 'conflict', data: { ...EMPTY, ...cur } });
+      }
+
+      next.rev = curRev + 1;
+      await redis.set(KEY, next);
+      return res.status(200).json({ ok: true, rev: next.rev });
     }
 
     res.setHeader('Allow', 'GET, POST');
