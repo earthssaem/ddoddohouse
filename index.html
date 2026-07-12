@@ -96,8 +96,7 @@
   .seg-top button.on{border-color:var(--g);background:rgba(57,255,20,.1);color:var(--g);text-shadow:0 0 6px rgba(57,255,20,.5)}
 
   /* ---- Trophy Room (픽셀 트로피 진열장) ---- */
-  .tr-title{font-family:var(--font-pixel);font-size:.62rem;color:var(--y);text-align:center;margin:18px 0 18px;text-shadow:0 0 8px rgba(255,234,0,.5);letter-spacing:1px}
-  .tr-row{display:flex;justify-content:center;align-items:flex-end;gap:16px;padding:0 8px}
+  .tr-row{display:flex;justify-content:center;align-items:flex-end;gap:16px;padding:0 8px;margin-top:30px}
   .tr-pod{display:flex;flex-direction:column;align-items:center;min-width:0}
   .tr-pod svg{display:block}
   .tr-plate{margin-top:9px;max-width:104px;padding:5px 8px;font-size:.8rem;font-weight:700;color:#111;border:2px solid #000;box-shadow:2px 2px 0 #000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -122,16 +121,17 @@
 
   /* ---- High Score Board (아케이드 하이스코어) ---- */
   .hs-board{background:var(--surface);border:2px solid var(--line);padding:4px 10px 10px;margin-top:20px}
-  .hs-head{display:grid;grid-template-columns:54px 104px auto;gap:10px;padding:12px 6px 10px;font-family:var(--font-pixel);font-size:.5rem;color:var(--b);text-shadow:0 0 6px rgba(0,255,255,.4);border-bottom:2px solid var(--line)}
-  .hs-row{display:grid;grid-template-columns:54px 104px auto;gap:10px;align-items:center;padding:11px 6px}
+  .hs-head{display:grid;grid-template-columns:56px 1fr auto;gap:10px;padding:12px 6px 10px;font-family:var(--font-pixel);font-size:.5rem;color:var(--b);text-shadow:0 0 6px rgba(0,255,255,.4);border-bottom:2px solid var(--line)}
+  .hs-head span:last-child{text-align:right}
+  .hs-row{display:grid;grid-template-columns:56px 1fr auto;gap:10px;align-items:center;padding:11px 6px}
   .hs-rows .hs-row:nth-child(even){background:#12121c}
   .hs-rank{font-family:var(--font-pixel);font-size:.56rem}
   .hs-name{font-size:.9rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-  .hs-rec{font-size:.9rem;font-weight:700;white-space:nowrap}
+  .hs-rec{font-size:.9rem;font-weight:700;white-space:nowrap;text-align:right}
   .hs-rate{font-size:.85em;opacity:.6;margin-left:3px}
-  .hs-rows .hs-row.hs-top{background:#0d2b12;border:3px solid currentColor;padding:8px 3px;animation:hsblink 1s step-end infinite}
+  .hs-rows .hs-row.hs-top{background:#14141f;background:color-mix(in srgb,currentColor 13%,#0b0b10);border:3px solid currentColor;padding:8px 3px;animation:hsblink 1s step-end infinite}
   @keyframes hsblink{0%,50%{opacity:1}51%,100%{opacity:.25}}
-  @media (max-width:360px){.hs-rate{font-size:.68em}.hs-head,.hs-row{grid-template-columns:50px 88px auto;gap:8px}}
+  @media (max-width:360px){.hs-rate{font-size:.68em}}
   @media (prefers-reduced-motion:reduce){.hs-rows .hs-row.hs-top,.tr-gold .spk{animation:none}}
 
   .panel{background:var(--surface);border:2px solid var(--line);border-radius:10px;padding:6px 14px}
@@ -636,8 +636,7 @@ function renderOverall(){
   }
   // 진열장: 은(2위)-금(1위)-동(3위) 순 배치, 금이 가운데·가장 크게
   const disp=[[stats[1],'silver',46],[stats[0],'gold',60],[stats[2],'bronze',40]].filter(x=>x[0]);
-  troom.innerHTML=`<div class="tr-title">★ TROPHY ROOM ★</div>
-    <div class="tr-row">${disp.map(([p,k,px])=>`
+  troom.innerHTML=`<div class="tr-row">${disp.map(([p,k,px])=>`
       <div class="tr-pod tr-${k}">
         ${trophySVG(k,px)}
         <div class="tr-plate" style="background:${p.color}">${esc(p.name)}</div>
