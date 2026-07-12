@@ -455,15 +455,27 @@ function mergeDB(server,local){
   };
 }
 
+const DIRTY_LS='ddoddohouse_dirty'; // 서버 저장에 실패한 기록이 로컬에 남아있다는 표시
+function readLocal(){try{const r=localStorage.getItem('ddoddohouse_db');return r?JSON.parse(r):null}catch(e){return null}}
+
 async function load(){
   setSync('saving','SYNC…');
   try{
-    const data=await apiGet();
-    if(data)DB=data;
-    if(!DB.games)DB={games:[],players:[],logs:[],rev:0};
-    setSync('ok','ONLINE');
+    const data=(await apiGet())||{games:[],players:[],logs:[],rev:0};
+    if(!data.games)Object.assign(data,{games:[],players:[],logs:[]});
+    const local=readLocal();
+    if(local&&local.games&&localStorage.getItem(DIRTY_LS)){
+      // 오프라인 중 저장했던 기록이 있음 → 서버 데이터와 병합하고 서버로 밀어올림
+      DB=mergeDB(data,local);
+      setSync('ok','ONLINE');
+      await save();
+    }else{
+      DB=data;
+      setSync('ok','ONLINE');
+    }
   }catch(e){
-    try{const r=localStorage.getItem('ddoddohouse_db');if(r)DB=JSON.parse(r);}catch(_){}
+    const local=readLocal();
+    if(local)DB=local;
     if(!DB.games)DB={games:[],players:[],logs:[],rev:0};
     setSync('err','OFFLINE');
   }
@@ -482,9 +494,10 @@ async function save(){
       render();
     }
     DB.rev=res.rev;
-    try{localStorage.setItem('ddoddohouse_db',JSON.stringify(DB));}catch(e){}
+    try{localStorage.setItem('ddoddohouse_db',JSON.stringify(DB));localStorage.removeItem(DIRTY_LS);}catch(e){}
     setSync('ok','ONLINE');
   }catch(e){
+    try{localStorage.setItem(DIRTY_LS,'1');}catch(_){}
     if(e.message==='unauthorized'){setSync('err','NO KEY');toast('비밀 코드가 필요해요 — ⚙️에서 입력');}
     else setSync('err','SAVE FAIL');
   }
@@ -493,12 +506,14 @@ async function save(){
 const CHO=['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
 function getCho(str){let out='';for(const ch of str){const c=ch.charCodeAt(0)-0xAC00;if(c>=0&&c<=11171)out+=CHO[Math.floor(c/588)];else out+=ch;}return out;}
 function matchGame(g,q){if(!q)return true;q=q.toLowerCase().trim();const name=g.name.toLowerCase();return name.includes(q)||getCho(g.name).includes(q)||(g.owner||'').toLowerCase().includes(q);}
-function highlight(name,q){if(!q)return name;const i=name.toLowerCase().indexOf(q.toLowerCase());if(i<0)return name;return name.slice(0,i)+'<mark>'+name.slice(i,i+q.length)+'</mark>'+name.slice(i+q.length);}
+function highlight(name,q){if(!q)return esc(name);const i=name.toLowerCase().indexOf(q.toLowerCase());if(i<0)return esc(name);return esc(name.slice(0,i))+'<mark>'+esc(name.slice(i,i+q.length))+'</mark>'+esc(name.slice(i+q.length));}
 window.onSearch=v=>{searchQuery=v;$('#clrBtn').classList.toggle('show',!!v);renderGames()};
 window.clearSearch=()=>{searchQuery='';$('#gameSearch').value='';$('#clrBtn').classList.remove('show');renderGames();$('#gameSearch').focus()};
 
 const $=s=>document.querySelector(s);
 const uid=()=>Math.random().toString(36).slice(2,9);
+// 사용자 입력(이름·게임명·아이콘 등)을 HTML에 넣기 전 이스케이프
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function pickColor(){
   const used=new Set(DB.players.map(p=>p.color).filter(Boolean));
   for(const c of AVA_COLORS){if(!used.has(c))return c;}
@@ -544,8 +559,8 @@ function renderOverall(){
   const stats=playerStats();const pod=$('#podium');
   if(stats.length<1){pod.innerHTML='';$('#rankList').innerHTML='<div class="empty"><div class="e-ico">🏆</div><p>아직 기록이 없어요.</p><div class="pix">PRESS + TO START</div></div>';return}
   const order=[stats[1],stats[0],stats[2]];const cls=['p2','p1','p3'];const crown=['','👑',''];
-  pod.innerHTML=order.map((p,i)=>!p?'':`<div class="pod ${cls[i]}"><div class="crown">${crown[i]}</div><div class="ava" style="background:${p.color}">${p.name}</div><div class="wr">${p.rate}%</div><div class="bar">${i==0?'2':i==1?'1':'3'}</div></div>`).join('');
-  $('#rankList').innerHTML=stats.map((p,i)=>`<div class="rank-row"><div class="pos">${i+1}</div><div class="ava2" style="background:${p.color}"></div><div class="info"><h4>${p.name}</h4><p>${p.plays}판 · ${p.wins}승</p></div><div class="rate">${p.rate}%<small>WIN</small></div></div>`).join('');
+  pod.innerHTML=order.map((p,i)=>!p?'':`<div class="pod ${cls[i]}"><div class="crown">${crown[i]}</div><div class="ava" style="background:${p.color}">${esc(p.name)}</div><div class="wr">${p.rate}%</div><div class="bar">${i==0?'2':i==1?'1':'3'}</div></div>`).join('');
+  $('#rankList').innerHTML=stats.map((p,i)=>`<div class="rank-row"><div class="pos">${i+1}</div><div class="ava2" style="background:${p.color}"></div><div class="info"><h4>${esc(p.name)}</h4><p>${p.plays}판 · ${p.wins}승</p></div><div class="rate">${p.rate}%<small>WIN</small></div></div>`).join('');
 }
 
 function renderSession(){
@@ -557,9 +572,9 @@ function renderSession(){
     const wc={};day.logs.forEach(l=>l.winners.forEach(w=>wc[w]=(wc[w]||0)+1));
     let champId=null,mx=-1;Object.entries(wc).forEach(([p,c])=>{if(c>mx){mx=c;champId=p}});
     const champName=champId?pname(champId):'-';
-    const gh=day.logs.slice().sort((a,b)=>a.date-b.date).map(l=>{const g=gameOf(l.gameId);const rm=roundMark(day.logs,l);const hasWin=l.winners.length>0;return `<div class="s-game"><span class="sg-ico">${g?g.icon:'🎲'}</span><span class="sg-nm">${g?g.name:'게임'}${rm?' '+rm:''}</span><span class="sg-win" style="${hasWin?'':'color:var(--muted-2)'}">${hasWin?'👑 '+l.winners.map(pname).join(', '):'💀 실패'}</span></div>`}).join('');
+    const gh=day.logs.slice().sort((a,b)=>a.date-b.date).map(l=>{const g=gameOf(l.gameId);const rm=roundMark(day.logs,l);const hasWin=l.winners.length>0;return `<div class="s-game"><span class="sg-ico">${g?esc(g.icon):'🎲'}</span><span class="sg-nm">${g?esc(g.name):'게임'}${rm?' '+rm:''}</span><span class="sg-win" style="${hasWin?'':'color:var(--muted-2)'}">${hasWin?'👑 '+l.winners.map(id=>esc(pname(id))).join(', '):'💀 실패'}</span></div>`}).join('');
     return `<div class="session"><div class="s-head"><span class="s-date">${dayLabel(day.date)}</span><span class="s-line"></span><span class="s-meta">${day.logs.length} PLAYS</span></div>
-      <div class="s-winner" onclick="openSessionDetail('${dayKey(day.date)}')" style="cursor:pointer"><div class="wc">👑</div><div class="wt"><div class="wlbl">TODAY'S MVP</div><div class="wnm">${champName}</div><div class="wsub">${mx>0?mx+'승':'승자 없음'} · 탭하면 상세</div></div><div class="s-arrow">›</div></div>
+      <div class="s-winner" onclick="openSessionDetail('${dayKey(day.date)}')" style="cursor:pointer"><div class="wc">👑</div><div class="wt"><div class="wlbl">TODAY'S MVP</div><div class="wnm">${esc(champName)}</div><div class="wsub">${mx>0?mx+'승':'승자 없음'} · 탭하면 상세</div></div><div class="s-arrow">›</div></div>
       <div class="s-games">${gh}</div></div>`;
   }).join('');
 }
@@ -579,15 +594,15 @@ window.openSessionDetail=key=>{
   const maxWins=rows.length?rows[0].wins:0;
   const playerHTML=rows.map(r=>{
     const isTop=r.wins>0&&r.wins===maxWins;
-    const games=r.wonGames.length?r.wonGames.join(', '):'승리 없음';
+    const games=r.wonGames.length?esc(r.wonGames.join(', ')):'승리 없음';
     return `<div class="sd-row ${isTop?'sd-top':''}" onclick="openPlayerCard('${key}','${r.pid}')" style="cursor:pointer">
       <div class="sd-dot" style="background:${r.color}"></div>
-      <div class="sd-info"><div class="sd-name">${isTop?'👑 ':''}${r.name}</div><div class="sd-games">${games}</div></div>
+      <div class="sd-info"><div class="sd-name">${isTop?'👑 ':''}${esc(r.name)}</div><div class="sd-games">${games}</div></div>
       <div class="sd-wins"><b>${r.wins}</b><span>승</span></div>
       <div class="sd-go">›</div>
     </div>`;
   }).join('');
-  const gameHTML=logs.map(l=>{const g=gameOf(l.gameId);const rm=roundMark(logs,l);const hasWin=l.winners.length>0;return `<div class="sd-game"><span class="sd-gico">${g?g.icon:'🎲'}</span><span class="sd-gnm">${g?g.name:'게임'}${rm?'<span class="sd-ground">'+rm+'</span>':''}</span><span class="sd-gwin" style="${hasWin?'':'color:#aaa'}">${hasWin?'👑 '+l.winners.map(pname).join(', '):'💀 실패'}</span></div>`}).join('');
+  const gameHTML=logs.map(l=>{const g=gameOf(l.gameId);const rm=roundMark(logs,l);const hasWin=l.winners.length>0;return `<div class="sd-game"><span class="sd-gico">${g?esc(g.icon):'🎲'}</span><span class="sd-gnm">${g?esc(g.name):'게임'}${rm?'<span class="sd-ground">'+rm+'</span>':''}</span><span class="sd-gwin" style="${hasWin?'':'color:#aaa'}">${hasWin?'👑 '+l.winners.map(id=>esc(pname(id))).join(', '):'💀 실패'}</span></div>`}).join('');
   $('#sdBody').innerHTML=`
     <div class="sd-title">${dateLabel}</div>
     <div class="sd-sub">${logs.length} PLAYS · ${rows.length}명 참여</div>
@@ -637,7 +652,7 @@ window.openPlayerCard=(key,pid)=>{
       badge=`<span class="pc-rk">-</span>`;sortKey=99;
     }
     if(l.winners.includes(pid))wins++;
-    const html=`<div class="pc-game ${cls}"><span class="pc-gico">${g?g.icon:'🎲'}</span><span class="pc-gnm">${g?g.name:'게임'}${rm?'<span class="pc-ground">'+rm+'</span>':''}</span><span class="pc-res">${badge}</span></div>`;
+    const html=`<div class="pc-game ${cls}"><span class="pc-gico">${g?esc(g.icon):'🎲'}</span><span class="pc-gnm">${g?esc(g.name):'게임'}${rm?'<span class="pc-ground">'+rm+'</span>':''}</span><span class="pc-res">${badge}</span></div>`;
     return {html,sortKey};
   });
   // 등수/결과 좋은 순 정렬
@@ -650,7 +665,7 @@ window.openPlayerCard=(key,pid)=>{
     </div>
     <div class="pc-hero">
       <div class="pc-logo">🎲 DDODDOHOUSE 🐰</div>
-      <div class="pc-name" style="color:${player.color};text-shadow:0 0 20px ${player.color}88">${player.name}</div>
+      <div class="pc-name" style="color:${player.color};text-shadow:0 0 20px ${player.color}88">${esc(player.name)}</div>
       <div class="pc-sub">${sub}</div>
     </div>
     <div class="pc-games">${rowsHTML}</div>
@@ -669,16 +684,16 @@ function renderGames(){
   let filtered=DB.games.filter(g=>matchGame(g,searchQuery));
   if(activeCat!=='전체')filtered=filtered.filter(g=>(g.cat||'기타')===activeCat);
   if(!filtered.length){list.innerHTML=`<div class="empty"><div class="e-ico">🔍</div><p>조건에 맞는 게임이 없어요.</p></div>`;return}
-  list.innerHTML=filtered.map(g=>`<div class="game-card"><button class="gedit" onclick="editGame('${g.id}',event)" title="수정">✏️</button><button class="gdel" onclick="delGame('${g.id}',event)" title="삭제">✕</button><div class="top"><div class="ico">${g.icon}</div><div class="pcount"><b>${playCount(g)}</b><small>PLAYS</small></div></div><h3>${highlight(g.name,searchQuery)}</h3><div class="catlbl">${g.cat||'기타'}</div><div class="badges"><span class="badge">👥 ${g.minP}-${g.maxP}</span><span class="badge">⏱ ${g.time}분</span>${g.owner?`<span class="badge own">📦 ${g.owner}</span>`:''}</div></div>`).join('');
+  list.innerHTML=filtered.map(g=>`<div class="game-card"><button class="gedit" onclick="editGame('${g.id}',event)" title="수정">✏️</button><button class="gdel" onclick="delGame('${g.id}',event)" title="삭제">✕</button><div class="top"><div class="ico">${esc(g.icon)}</div><div class="pcount"><b>${playCount(g)}</b><small>PLAYS</small></div></div><h3>${highlight(g.name,searchQuery)}</h3><div class="catlbl">${esc(g.cat||'기타')}</div><div class="badges"><span class="badge">👥 ${g.minP}-${g.maxP}</span><span class="badge">⏱ ${g.time}분</span>${g.owner?`<span class="badge own">📦 ${esc(g.owner)}</span>`:''}</div></div>`).join('');
 }
 
 function renderLog(){
   $('#logCount').textContent=DB.logs.length;const list=$('#logList');
   if(!DB.logs.length){list.innerHTML='<div class="empty"><div class="e-ico">🕹️</div><p>기록된 판이 없어요.</p><div class="pix">GAME START!</div></div>';return}
-  const gname=id=>{const g=gameOf(id);return g?g.icon+' '+g.name:'🎲 게임'};
+  const gname=id=>{const g=gameOf(id);return g?esc(g.icon)+' '+esc(g.name):'🎲 게임'};
   const sorted=[...DB.logs].sort((a,b)=>b.date-a.date);
   list.innerHTML=sorted.map(l=>{const hasScore=l.scores&&Object.keys(l.scores).length;const dayLogs=DB.logs.filter(x=>dayKey(x.date)===dayKey(l.date));const rm=roundMark(dayLogs,l);
-    return `<div class="log"><div class="dot"></div><div class="body"><div class="gname">${gname(l.gameId)}${rm?' '+rm:''}</div><div class="date">${timeAgo(l.date)}</div><div class="players">${l.players.map(pid=>{const sc=hasScore&&l.scores[pid]!=null?`<span class="sc">${l.scores[pid]}</span>`:'';return `<span class="pchip ${l.winners.includes(pid)?'win':''}">${l.winners.includes(pid)?'👑 ':''}${pname(pid)}${sc}</span>`}).join('')}</div></div><div class="log-acts"><button class="edit" onclick="editLog('${l.id}')">수정</button><button class="del" onclick="delLog('${l.id}')">삭제</button></div></div>`;
+    return `<div class="log"><div class="dot"></div><div class="body"><div class="gname">${gname(l.gameId)}${rm?' '+rm:''}</div><div class="date">${timeAgo(l.date)}</div><div class="players">${l.players.map(pid=>{const sc=hasScore&&l.scores[pid]!=null?`<span class="sc">${l.scores[pid]}</span>`:'';return `<span class="pchip ${l.winners.includes(pid)?'win':''}">${l.winners.includes(pid)?'👑 ':''}${esc(pname(pid))}${sc}</span>`}).join('')}</div></div><div class="log-acts"><button class="edit" onclick="editLog('${l.id}')">수정</button><button class="del" onclick="delLog('${l.id}')">삭제</button></div></div>`;
   }).join('');
 }
 
@@ -689,7 +704,7 @@ function renderStats(){
   const counts={};DB.logs.forEach(l=>{counts[l.gameId]=(counts[l.gameId]||0)+1});
   const arr=DB.games.map(g=>({g,c:counts[g.id]||0})).filter(x=>x.c>0).sort((a,b)=>b.c-a.c).slice(0,6);
   const max=arr.length?arr[0].c:1;
-  $('#topGames').innerHTML=arr.length?arr.map(x=>`<div class="bar-stat"><div class="lbl"><b>${x.g.icon} ${x.g.name}</b><span>${x.c}</span></div><div class="track"><div class="fill" style="width:${x.c/max*100}%"></div></div></div>`).join(''):'<div class="empty" style="padding:20px"><p>플레이 기록이 쌓이면<br>여기에 표시돼요.</p></div>';
+  $('#topGames').innerHTML=arr.length?arr.map(x=>`<div class="bar-stat"><div class="lbl"><b>${esc(x.g.icon)} ${esc(x.g.name)}</b><span>${x.c}</span></div><div class="track"><div class="fill" style="width:${x.c/max*100}%"></div></div></div>`).join(''):'<div class="empty" style="padding:20px"><p>플레이 기록이 쌓이면<br>여기에 표시돼요.</p></div>';
 }
 
 window.delLog=async id=>{
@@ -724,7 +739,7 @@ function settingsHTML(){
   const k=appKey();
   return `<h2>DDODDOHOUSE</h2>
   <div class="hint" style="margin:-12px 0 16px">이 앱은 <b>서버(Upstash Redis)</b>에 기록을 저장해요. 별도 연결 없이 자동 동기화됩니다. 친구들과 같은 주소를 쓰면 기록이 함께 쌓여요. ✨</div>
-  <label class="fld"><span class="t">비밀 코드 — 기록 저장에 필요해요 (주소 뒤에 ?key=코드 를 붙여 공유하면 자동 입력)</span><input id="setKey" type="text" value="${k.replace(/"/g,'&quot;')}" placeholder="설정 안 했으면 비워두세요"></label>
+  <label class="fld"><span class="t">비밀 코드 — 기록 저장에 필요해요 (주소 뒤에 ?key=코드 를 붙여 공유하면 자동 입력)</span><input id="setKey" type="text" value="${esc(k)}" placeholder="설정 안 했으면 비워두세요"></label>
   <button class="btn-ghost" onclick="saveKey()">코드 저장</button>
   <button class="action-btn" onclick="reloadFromSheet()">RELOAD</button>
   <button class="btn-ghost" onclick="resetAll()">기록 전체 초기화</button>`;
@@ -749,10 +764,10 @@ let editingGameId=null;
 function gameFormHTML(){
   const g=editingGameId?gameOf(editingGameId):null;
   const v=(x,d)=>g?g[x]:d;
-  return `<div class="row2"><label class="fld" style="flex:3"><span class="t">게임 이름</span><input id="gName" placeholder="예: 카탄, 스플렌더" value="${g?g.name.replace(/"/g,'&quot;'):''}"></label><label class="fld" style="flex:1"><span class="t">아이콘</span><input id="gIcoInput" type="text" value="${g&&g.icon?g.icon:'🎲'}" style="text-align:center;font-size:1.5rem;padding:10px 4px"></label></div>
+  return `<div class="row2"><label class="fld" style="flex:3"><span class="t">게임 이름</span><input id="gName" placeholder="예: 카탄, 스플렌더" value="${g?esc(g.name):''}"></label><label class="fld" style="flex:1"><span class="t">아이콘</span><input id="gIcoInput" type="text" value="${g&&g.icon?esc(g.icon):'🎲'}" style="text-align:center;font-size:1.5rem;padding:10px 4px"></label></div>
   <label class="fld"><span class="t">카테고리</span><select id="gCat">${CATEGORIES.map(c=>`<option value="${c}" ${g&&g.cat===c?'selected':''}>${c}</option>`).join('')}</select></label>
   <div class="row2"><label class="fld"><span class="t">최소 인원</span><input id="gMin" type="number" inputmode="numeric" value="${v('minP',2)}"></label><label class="fld"><span class="t">최대 인원</span><input id="gMax" type="number" inputmode="numeric" value="${v('maxP',4)}"></label><label class="fld"><span class="t">시간(분)</span><input id="gTime" type="number" inputmode="numeric" value="${v('time',60)}"></label></div>
-  <label class="fld"><span class="t">소장자 (선택)</span><input id="gOwner" placeholder="누구 거예요?" value="${g&&g.owner?g.owner.replace(/"/g,'&quot;'):''}"></label>
+  <label class="fld"><span class="t">소장자 (선택)</span><input id="gOwner" placeholder="누구 거예요?" value="${g&&g.owner?esc(g.owner):''}"></label>
   <button class="action-btn" onclick="addGame()">${g?'SAVE EDIT':'ADD GAME'}</button>`;
 }
 window.addGame=async()=>{
@@ -799,7 +814,7 @@ function logFormHTML(){
   </div>
   <label class="fld"><input id="lDate" type="date" value="${dateVal}"></label>
   <div class="step-lbl">STEP 2 · PLAYERS</div>
-  <div class="chip-pick" id="lPlayers">${DB.players.map(p=>`<button data-id="${p.id}" class="${selPlayers.includes(p.id)?'sel':''}" onclick="togglePlayer(this)">${p.name}</button>`).join('')}</div>
+  <div class="chip-pick" id="lPlayers">${DB.players.map(p=>`<button data-id="${p.id}" class="${selPlayers.includes(p.id)?'sel':''}" onclick="togglePlayer(this)">${esc(p.name)}</button>`).join('')}</div>
   <div style="display:flex;gap:8px;margin:10px 0 16px"><input id="newP" placeholder="새 친구 추가" style="flex:1;min-width:0" onkeydown="if(event.key==='Enter')addPlayerChip()"><button class="btn-ghost" style="width:auto;margin:0;padding:13px 26px;white-space:nowrap;flex-shrink:0" onclick="addPlayerChip()">+ 추가</button></div>
   <div class="step-lbl">STEP 3 · RESULT</div>
   <div class="modetoggle"><button class="${scoreMode?'':'on'}" id="mWin" onclick="setMode(false)">👑 승자만</button><button class="${scoreMode?'on':''}" id="mScore" onclick="setMode(true)">🔢 점수→등수</button></div>
@@ -814,7 +829,7 @@ function gamesByRecent(){
   DB.logs.forEach(l=>{if(!lastPlayed[l.gameId]||l.date>lastPlayed[l.gameId])lastPlayed[l.gameId]=l.date;});
   return [...DB.games].sort((a,b)=>(lastPlayed[b.id]||0)-(lastPlayed[a.id]||0));
 }
-function gselLabel(id){const g=gameOf(id);return g?`<span>${g.icon} ${g.name}</span>`:`<span style="color:var(--muted-2)">게임을 선택하세요</span>`;}
+function gselLabel(id){const g=gameOf(id);return g?`<span>${esc(g.icon)} ${esc(g.name)}</span>`:`<span style="color:var(--muted-2)">게임을 선택하세요</span>`;}
 window.toggleGsel=()=>{const pop=$('#gselPop');const open=pop.classList.toggle('show');if(open){renderGselList('');setTimeout(()=>{const s=$('#gselSearch');if(s){s.value='';s.focus();}},50);}};
 function renderGselList(q){
   const list=$('#gselList');if(!list)return;
@@ -822,7 +837,7 @@ function renderGselList(q){
   if(q)games=games.filter(g=>matchGame(g,q));
   const cur=$('#lGame').value;
   if(!games.length){list.innerHTML='<div class="gsel-empty">검색 결과가 없어요</div>';return;}
-  list.innerHTML=games.map(g=>`<div class="gsel-item ${g.id===cur?'on':''}" onclick="pickGame('${g.id}')"><span class="gsel-ico">${g.icon}</span><span class="gsel-nm">${g.name}</span>${g.id===cur?'<span class="gsel-chk">✓</span>':''}</div>`).join('');
+  list.innerHTML=games.map(g=>`<div class="gsel-item ${g.id===cur?'on':''}" onclick="pickGame('${g.id}')"><span class="gsel-ico">${esc(g.icon)}</span><span class="gsel-nm">${esc(g.name)}</span>${g.id===cur?'<span class="gsel-chk">✓</span>':''}</div>`).join('');
 }
 window.filterGsel=v=>renderGselList(v.trim());
 window.pickGame=id=>{$('#lGame').value=id;$('#gselCur').innerHTML=gselLabel(id)+'<span class="gsel-arrow">▾</span>';$('#gselPop').classList.remove('show');};
@@ -835,10 +850,10 @@ function refreshResult(){
   const w=$('#resultArea');if(!w)return;
   if(!selPlayers.length){w.innerHTML='<div class="hint" style="margin:0">위에서 친구를 먼저 선택해주세요</div>';return}
   if(!scoreMode){
-    w.innerHTML='<div class="hint" style="margin:0 0 10px">이긴 친구를 탭하세요 (여러 명 가능 · 협력게임은 다 같이 탭/아무도 안 탭)</div><div class="chip-pick">'+selPlayers.map(id=>{const p=DB.players.find(x=>x.id===id);return `<button data-id="${id}" class="${selWinners.includes(id)?'sel':''}" onclick="toggleWinner(this)">${selWinners.includes(id)?'👑 ':''}${p.name}</button>`}).join('')+'</div>';
+    w.innerHTML='<div class="hint" style="margin:0 0 10px">이긴 친구를 탭하세요 (여러 명 가능 · 협력게임은 다 같이 탭/아무도 안 탭)</div><div class="chip-pick">'+selPlayers.map(id=>{const p=DB.players.find(x=>x.id===id);return `<button data-id="${id}" class="${selWinners.includes(id)?'sel':''}" onclick="toggleWinner(this)">${selWinners.includes(id)?'👑 ':''}${esc(p.name)}</button>`}).join('')+'</div>';
   }else{
     const rm=rankMapFrom(scores);
-    w.innerHTML='<div class="hint" style="margin:0 0 10px">점수 입력 시 등수 자동 (높은 점수=1등) · 음수 가능</div>'+selPlayers.map(id=>{const p=DB.players.find(x=>x.id===id);const rk=rm[id];return `<div class="pscore ${rk===1?'lead':''}"><span class="rk ${rk===1?'r1':''}">${rk?(rk===1?'1ST':rk+'TH'):'--'}</span><span class="pn">${p.name}</span><input type="number" inputmode="text" step="1" placeholder="점수" value="${scores[id]!=null?scores[id]:''}" oninput="setScore('${id}',this.value)"></div>`}).join('');
+    w.innerHTML='<div class="hint" style="margin:0 0 10px">점수 입력 시 등수 자동 (높은 점수=1등) · 음수 가능</div>'+selPlayers.map(id=>{const p=DB.players.find(x=>x.id===id);const rk=rm[id];return `<div class="pscore ${rk===1?'lead':''}"><span class="rk ${rk===1?'r1':''}">${rk?(rk===1?'1ST':rk+'TH'):'--'}</span><span class="pn">${esc(p.name)}</span><input type="number" inputmode="text" step="1" placeholder="점수" value="${scores[id]!=null?scores[id]:''}" oninput="setScore('${id}',this.value)"></div>`}).join('');
   }
 }
 window.toggleWinner=el=>{const id=el.dataset.id;if(selWinners.includes(id))selWinners=selWinners.filter(x=>x!==id);else selWinners.push(id);refreshResult()};
