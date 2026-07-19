@@ -25,6 +25,11 @@ return base + 1
 export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
+      // APP_PROTECT_READ=1 이면 읽기도 비밀 코드 필요 (기본은 읽기 공개)
+      const secret = process.env.APP_SECRET;
+      if (secret && process.env.APP_PROTECT_READ === '1' && req.headers['x-app-key'] !== secret) {
+        return res.status(401).json({ error: 'unauthorized' });
+      }
       const data = await redis.get(KEY);
       if (data) {
         // 예전 방식으로 저장된 데이터라면 rev 키를 맞춰둠
