@@ -246,7 +246,8 @@
   .step-lbl{font-family:var(--font-pixel);font-size:.56rem;color:var(--b);margin-bottom:10px;text-shadow:0 0 6px rgba(0,255,255,.4)}
   label.fld{display:block;margin-bottom:16px}
   label.fld .t{font-size:.72rem;color:var(--muted);font-weight:700;margin-bottom:7px;display:block}
-  input,select{width:100%;background:var(--surface);border:2px solid var(--line);border-radius:8px;padding:13px 14px;color:#fff;font-family:'DungGeunMo',sans-serif;font-size:.92rem;font-weight:600;outline:none;transition:border-color .2s}
+  input,select{width:100%;background:var(--surface);border:2px solid var(--line);border-radius:8px;padding:13px 14px;color:#fff;font-family:'DungGeunMo',sans-serif;font-size:.92rem;font-weight:600;outline:none;transition:border-color .2s;color-scheme:dark}
+  input[type="date"]::-webkit-calendar-picker-indicator{opacity:.85;cursor:pointer}
   input:focus,select:focus{border-color:var(--b)}
   input::placeholder{color:var(--muted-2);font-weight:500}
   select option{background:var(--surface)}
@@ -290,9 +291,13 @@
   .seg{display:flex;gap:8px;margin-bottom:18px}
   .seg button{flex:1;padding:12px;border:2px solid var(--line);border-radius:8px;background:var(--surface);color:var(--muted);font-family:inherit;font-weight:700;font-size:.84rem;cursor:pointer;transition:.2s}
   .seg button.on{border-color:var(--p);background:rgba(255,0,127,.1);color:var(--p)}
-  .del{font-size:.66rem;color:var(--p);background:none;border:none;cursor:pointer;font-family:inherit;font-weight:700;padding:4px}
-  .log-acts{display:flex;flex-direction:column;gap:2px;flex-shrink:0}
-  .edit{font-size:.66rem;color:var(--b);background:none;border:none;cursor:pointer;font-family:inherit;font-weight:700;padding:4px}
+  /* 수정/삭제: 폰에서 눌리도록 넉넉한 터치 영역(높이 34px+) 확보 */
+  .log-acts{display:flex;flex-direction:column;gap:7px;flex-shrink:0;justify-content:center}
+  .edit,.del{font-size:.7rem;background:var(--surface);border:2px solid var(--line);border-radius:7px;cursor:pointer;font-family:inherit;font-weight:700;padding:8px 13px;line-height:1;min-width:56px}
+  .edit{color:var(--b)}
+  .del{color:var(--p)}
+  .edit:active{transform:scale(.93);border-color:var(--b)}
+  .del:active{transform:scale(.93);border-color:var(--p)}
   .toast{position:absolute;bottom:120px;left:50%;transform:translateX(-50%) translateY(20px);background:#000;color:var(--g);padding:12px 22px;border-radius:8px;font-size:.84rem;font-weight:700;z-index:60;opacity:0;transition:all .3s;border:2px solid var(--g);box-shadow:0 0 16px rgba(57,255,20,.4);pointer-events:none;white-space:nowrap}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .setrow{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}

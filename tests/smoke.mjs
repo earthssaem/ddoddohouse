@@ -118,6 +118,17 @@ check('기록 저장 시 서버 rev 증가', store.rev === revBefore + 1, `rev $
 check('XSS 이름 무해화', (await page.evaluate(() => window.__xss)) !== 1);
 check('악성 이름이 서버에 텍스트로 저장', store.players.some(p => p.name.includes('<img')));
 
+console.log('\n[LOG 탭 — 삭제 버튼]');
+await page.click('nav button[data-v="log"]');
+await page.waitForTimeout(400);
+const delBox = await page.$eval('.log .del', e => e.getBoundingClientRect());
+check('삭제 버튼 터치 영역 30px 이상', delBox.height >= 30 && delBox.width >= 44, `${delBox.width}x${delBox.height}`);
+const logsBefore = store.logs.length;
+page.once('dialog', d => d.accept());
+await page.click('.log .del');
+await page.waitForTimeout(700);
+check('삭제 버튼 → 기록 삭제·서버 저장', store.logs.length === logsBefore - 1, `logs ${store.logs.length}`);
+
 check('콘솔 페이지 에러 없음', errors.length === 0, errors.join(' // '));
 
 await browser.close();
