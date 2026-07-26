@@ -1,5 +1,5 @@
 // 또또하우스 서비스 워커 — 정적 파일 캐시로 오프라인·즉시 실행 지원
-const CACHE = 'ddoddo-v3';
+const CACHE = 'ddoddo-v4';
 const ASSETS = [
   '/',
   '/index.html',

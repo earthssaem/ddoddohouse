@@ -299,36 +299,36 @@
   .setrow textarea{width:100%;min-height:70px;background:var(--surface);border:2px solid var(--line);border-radius:8px;padding:12px;color:#fff;font-family:monospace;font-size:.78rem;resize:vertical;outline:none}
   .setrow textarea:focus{border-color:var(--b)}
 
-  /* ---- Session detail popup (하얀 바탕) ---- */
+  /* ---- Session detail popup (다크 아케이드) ---- */
   .s-winner .s-arrow{font-family:var(--font-pixel);color:var(--y);font-size:1.1rem;opacity:.7;align-self:center}
   .sd-scrim{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s;display:grid;place-items:center;padding:20px}
   .sd-scrim.show{opacity:1;pointer-events:auto}
-  .sd-card{background:#fdfdfb;color:#1a1a1a;width:100%;max-width:440px;max-height:84vh;overflow-y:auto;border-radius:18px;padding:26px 22px 24px;position:relative;box-shadow:0 16px 50px rgba(0,0,0,.5);transform:scale(.94);transition:transform .25s;font-family:'DungGeunMo',sans-serif}
+  .sd-card{background:var(--bg2);color:var(--text);width:100%;max-width:440px;max-height:84vh;overflow-y:auto;border-radius:14px;border:2px solid var(--line-2);padding:26px 22px 24px;position:relative;box-shadow:0 16px 50px rgba(0,0,0,.6);transform:scale(.94);transition:transform .25s;font-family:'DungGeunMo',sans-serif}
   .sd-scrim.show .sd-card{transform:scale(1)}
-  .sd-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:8px;border:none;background:#efeae0;color:#666;font-size:.9rem;cursor:pointer;display:grid;place-items:center}
+  .sd-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:8px;border:2px solid var(--line);background:var(--surface-2);color:var(--muted);font-size:.9rem;cursor:pointer;display:grid;place-items:center}
   .sd-close:active{transform:scale(.9)}
-  .sd-title{font-size:1.25rem;font-weight:900;color:#1a1a1a;margin-bottom:2px}
-  .sd-sub{font-size:.8rem;color:#999;font-weight:700;margin-bottom:20px}
-  .sd-sec{font-family:var(--font-pixel);font-size:.62rem;font-weight:800;color:#b08400;letter-spacing:.5px;margin:18px 0 10px}
+  .sd-title{font-size:1.25rem;font-weight:900;color:var(--text);margin-bottom:2px}
+  .sd-sub{font-size:.8rem;color:var(--muted-2);font-weight:700;margin-bottom:20px}
+  .sd-sec{font-family:var(--font-pixel);font-size:.62rem;font-weight:800;color:var(--y);text-shadow:0 0 6px rgba(255,234,0,.4);letter-spacing:.5px;margin:18px 0 10px}
   .sd-players{display:flex;flex-direction:column;gap:8px}
-  .sd-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:#f5f2ea;border-radius:12px;border:2px solid transparent}
-  .sd-row.sd-top{background:#fff7d6;border-color:#ffd84a}
-  .sd-dot{width:14px;height:14px;border-radius:5px;flex-shrink:0;border:2px solid rgba(0,0,0,.15)}
+  .sd-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface);border-radius:10px;border:2px solid var(--line)}
+  .sd-row.sd-top{background:rgba(255,234,0,.08);border-color:var(--y)}
+  .sd-dot{width:14px;height:14px;border-radius:5px;flex-shrink:0;border:2px solid #000}
   .sd-info{flex:1;min-width:0}
-  .sd-name{font-size:1rem;font-weight:900;color:#222;margin-bottom:2px}
-  .sd-games{font-size:.74rem;color:#888;font-weight:600;line-height:1.4;word-break:keep-all}
+  .sd-name{font-size:1rem;font-weight:900;color:var(--text);margin-bottom:2px}
+  .sd-games{font-size:.74rem;color:var(--muted);font-weight:600;line-height:1.4;word-break:keep-all}
   .sd-wins{text-align:right;flex-shrink:0;display:flex;align-items:baseline;gap:2px}
-  .sd-wins b{font-size:1.5rem;font-weight:900;color:#e0820a;line-height:1}
-  .sd-wins span{font-size:.82rem;color:#e0820a;font-weight:800}
+  .sd-wins b{font-size:1.5rem;font-weight:900;color:var(--y);line-height:1;text-shadow:0 0 8px rgba(255,234,0,.4)}
+  .sd-wins span{font-size:.82rem;color:var(--y);font-weight:800}
   .sd-glist{display:flex;flex-direction:column;gap:6px}
-  .sd-game{display:flex;align-items:center;gap:10px;padding:10px 13px;background:#f5f2ea;border-radius:10px}
+  .sd-game{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--surface);border-radius:8px;border:2px solid var(--line)}
   .sd-gico{font-size:1.1rem}
-  .sd-gnm{flex:1;font-weight:700;color:#444;font-size:.86rem}
-  .sd-ground{font-size:.78rem;color:#c79a3a;font-weight:800;margin-left:4px}
-  .sd-gwin{font-size:.74rem;color:#3a9d3a;font-weight:800}
-  .sd-sec .sd-hint{font-family:'DungGeunMo',sans-serif;font-size:.62rem;color:#bbb;font-weight:600;margin-left:6px;letter-spacing:0;text-transform:none}
+  .sd-gnm{flex:1;font-weight:700;color:var(--muted);font-size:.86rem}
+  .sd-ground{font-size:.78rem;color:var(--y);font-weight:800;margin-left:4px}
+  .sd-gwin{font-size:.74rem;color:var(--g);font-weight:800;text-shadow:0 0 6px rgba(57,255,20,.4)}
+  .sd-sec .sd-hint{font-family:'DungGeunMo',sans-serif;font-size:.62rem;color:var(--muted-2);font-weight:600;margin-left:6px;letter-spacing:0;text-transform:none}
   .sd-row{position:relative}
-  .sd-go{color:#ccc;font-size:1.2rem;font-weight:700;flex-shrink:0;margin-left:2px}
+  .sd-go{color:var(--muted-2);font-size:1.2rem;font-weight:700;flex-shrink:0;margin-left:2px}
 
   /* ---- 개인 전적 카드 (9:16, 인스타 스토리 캡쳐용) ---- */
   .pc-scrim{position:fixed;inset:0;z-index:80;background:#000;opacity:0;pointer-events:none;transition:opacity .25s;display:flex;flex-direction:column;padding:14px;padding-top:max(14px,env(safe-area-inset-top));padding-bottom:max(14px,env(safe-area-inset-bottom))}
@@ -714,7 +714,7 @@ window.openSessionDetail=key=>{
       <div class="sd-go">›</div>
     </div>`;
   }).join('');
-  const gameHTML=logs.map(l=>{const g=gameOf(l.gameId);const rm=roundMark(logs,l);const hasWin=l.winners.length>0;return `<div class="sd-game"><span class="sd-gico">${g?esc(g.icon):'🎲'}</span><span class="sd-gnm">${g?esc(g.name):'게임'}${rm?'<span class="sd-ground">'+rm+'</span>':''}</span><span class="sd-gwin" style="${hasWin?'':'color:#aaa'}">${hasWin?'👑 '+l.winners.map(id=>esc(pname(id))).join(', '):'💀 실패'}</span></div>`}).join('');
+  const gameHTML=logs.map(l=>{const g=gameOf(l.gameId);const rm=roundMark(logs,l);const hasWin=l.winners.length>0;return `<div class="sd-game"><span class="sd-gico">${g?esc(g.icon):'🎲'}</span><span class="sd-gnm">${g?esc(g.name):'게임'}${rm?'<span class="sd-ground">'+rm+'</span>':''}</span><span class="sd-gwin" style="${hasWin?'':'color:var(--muted-2);text-shadow:none'}">${hasWin?'👑 '+l.winners.map(id=>esc(pname(id))).join(', '):'💀 실패'}</span></div>`}).join('');
   $('#sdBody').innerHTML=`
     <div class="sd-title">${dateLabel}</div>
     <div class="sd-sub">${logs.length} PLAYS · ${rows.length}명 참여</div>
